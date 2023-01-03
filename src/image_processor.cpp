@@ -206,13 +206,17 @@ bool ImageProcessor::initialize() {
   return true;
 }
 
+/**
+ * @brief 将imu的消息类型保存在缓冲中
+ *
+ */
 void ImageProcessor::stereoCallback(
     const sensor_msgs::ImageConstPtr& cam0_img,
     const sensor_msgs::ImageConstPtr& cam1_img) {
 
   //cout << "==================================" << endl;
 
-  // Get the current image.
+  // Get the current image. // 两个图像消息类型指针
   cam0_curr_img_ptr = cv_bridge::toCvShare(cam0_img,
       sensor_msgs::image_encodings::MONO8);
   cam1_curr_img_ptr = cv_bridge::toCvShare(cam1_img,
@@ -272,6 +276,7 @@ void ImageProcessor::stereoCallback(
   //    (ros::Time::now()-start_time).toSec());
 
   // Update the previous image and previous features.
+  // 下一时刻的上一时刻相关信息即为当前时刻的信息
   cam0_prev_img_ptr = cam0_curr_img_ptr;
   prev_features_ptr = curr_features_ptr;
   std::swap(prev_cam0_pyramid_, curr_cam0_pyramid_);
@@ -1229,6 +1234,7 @@ void ImageProcessor::twoPointRansac(
   return;
 }
 
+
 void ImageProcessor::publish() {
 
   // Publish features.
@@ -1257,6 +1263,7 @@ void ImageProcessor::publish() {
       curr_cam1_points, cam1_intrinsics, cam1_distortion_model,
       cam1_distortion_coeffs, curr_cam1_points_undistorted);
 
+  // 特征消息包含特征的位置和id
   for (int i = 0; i < curr_ids.size(); ++i) {
     feature_msg_ptr->features.push_back(FeatureMeasurement());
     feature_msg_ptr->features[i].id = curr_ids[i];
@@ -1266,9 +1273,10 @@ void ImageProcessor::publish() {
     feature_msg_ptr->features[i].v1 = curr_cam1_points_undistorted[i].y;
   }
 
+  // topic名字为features
   feature_pub.publish(feature_msg_ptr);
 
-  // Publish tracking info.
+  // Publish tracking info. // 包含的信息为图像的头、
   TrackingInfoPtr tracking_info_msg_ptr(new TrackingInfo());
   tracking_info_msg_ptr->header.stamp = cam0_curr_img_ptr->header.stamp;
   tracking_info_msg_ptr->before_tracking = before_tracking;
